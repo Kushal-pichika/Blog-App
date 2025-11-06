@@ -1,59 +1,54 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    DOCKERHUB_USER = credentials('dockerhub-cred')
-    FRONTEND_DIR = 'Blog-frontend'
-    BACKEND_DIR  = 'Blog-api'
-    FRONTEND_IMAGE = 'kushalpichika/blog-frontend'
-    BACKEND_IMAGE  = 'kushalpichika/blog-backend'
-  }
-
-  stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
+    environment {
+        DOCKERHUB = credentials('dockerhub-cred')
     }
 
-    stage('Build Frontend Image') {
-      steps {
-        dir("${FRONTEND_DIR}") {
-          script {
-            docker.build("${FRONTEND_IMAGE}:${BUILD_NUMBER}")
-          }
+    stages {
+        stage('Checkout Code') {
+            steps {
+                // Explicitly clone the repo
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/Kushal-pichika/Blog-App.git']]
+                ])
+                sh 'ls -al'
+            }
         }
-      }
-    }
 
-    stage('Build Backend Image') {
-      steps {
-        dir("${BACKEND_DIR}") {
-          script {
-            docker.build("${BACKEND_IMAGE}:${BUILD_NUMBER}")
-          }
+        stage('Build Frontend Image') {
+            steps {
+                dir('Blog-frontend') {
+                    sh 'docker build -t kushalpichika/blog-frontend:${BUILD_NUMBER} .'
+                }
+            }
         }
-      }
-    }
 
-    stage('Push Images') {
-      steps {
-        script {
-          docker.withRegistry('', 'dockerhub-cred') {
-            docker.image("${FRONTEND_IMAGE}:${BUILD_NUMBER}").push()
-            docker.image("${BACKEND_IMAGE}:${BUILD_NUMBER}").push()
-          }
+        stage('Build Backend Image') {
+            steps {
+                dir('Blog-api') {
+                    sh 'docker build -t kushalpichika/blog-backend:${BUILD_NUMBER} .'
+                }
+            }
         }
-      }
-    }
-  }
 
-  post {
-    success {
-      echo "✅ Images pushed to Docker Hub successfully!"
+        stage('Push Images') {
+            steps {
+                sh '''
+                    echo $DOCKERHUB_PSW | docker login -u $DOCKERHUB_USR --password-stdin
+                    docker push kushalpichika/blog-frontend:${BUILD_NUMBER}
+                    docker push kushalpichika/blog-backend:${BUILD_NUMBER}
+                '''
+            }
+        }
     }
-    failure {
-      echo "❌ Build failed."
+
+    post {
+        success {
+            echo "✅ Build and push successful!"
+        }
+        failure {
+            echo "❌ Build failed."
+        }
     }
-  }
 }
