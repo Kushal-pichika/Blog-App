@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background: radial-gradient(circle at 20% 30%, #0f172a, #020617);
+  color: #f1f5f9;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Glass look */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  transition: border 0.3s ease;
+}
+
+.glass:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Remove glow */
+.neon-text {
+  text-shadow: none;
+}
