@@ -9,16 +9,17 @@ pipeline {
         stage('Checkout Code') {
             steps {
                 // Explicitly clone the repo
-                checkout([$class: 'GitSCM', branches: [[name: '*/main']],
-                    userRemoteConfigs: [[url: 'https://github.com/Kushal-pichika/Blog-App.git']]
-                ])
-                sh 'ls -al'
+                sh '''
+                    rm -rf Blog-App
+                    git clone https://github.com/Kushal-pichika/Blog-App.git
+                    ls -al
+                '''
             }
         }
 
         stage('Build Frontend Image') {
             steps {
-                dir('Blog-frontend') {
+                dir('Blog-App/Blog-frontend') {
                     sh 'docker build -t kushalpichika/blog-frontend:${BUILD_NUMBER} .'
                 }
             }
@@ -26,7 +27,7 @@ pipeline {
 
         stage('Build Backend Image') {
             steps {
-                dir('Blog-api') {
+                dir('Blog-App/Blog-api') {
                     sh 'docker build -t kushalpichika/blog-backend:${BUILD_NUMBER} .'
                 }
             }
@@ -45,10 +46,10 @@ pipeline {
 
     post {
         success {
-            echo "✅ Build and push successful!"
+            echo '✅ Build and push successful!'
         }
         failure {
-            echo "❌ Build failed."
+            echo '❌ Build failed.'
         }
     }
 }
