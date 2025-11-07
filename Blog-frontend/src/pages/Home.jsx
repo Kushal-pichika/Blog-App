@@ -3,12 +3,15 @@ import PostCard from "../components/PostCard";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
+// ✅ Dynamic API base URL (same as in AddPost.js)
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 function Home() {
   const [posts, setPosts] = useState([]);
 
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/posts/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/api/posts/${id}`, {
         method: "DELETE",
       });
 
@@ -25,10 +28,10 @@ function Home() {
   };
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/posts")
+    fetch(`${API_BASE_URL}/api/posts`)
       .then((res) => res.json())
       .then((data) => setPosts(data))
-      .catch((err) => console.error(err));
+      .catch((err) => console.error("Fetch error:", err));
   }, []);
 
   return (
@@ -39,15 +42,14 @@ function Home() {
       transition={{ duration: 0.8 }}
     >
       <motion.h1
-  className="text-3xl font-futuristic text-center mb-10"
-  initial={{ opacity: 0, y: 20 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.8 }}
->
-  <span className="text-neon-blue">Latest</span>{" "}
-  <span className="text-neon-pink">Posts</span>
-</motion.h1>
-
+        className="text-3xl font-futuristic text-center mb-10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8 }}
+      >
+        <span className="text-neon-blue">Latest</span>{" "}
+        <span className="text-neon-pink">Posts</span>
+      </motion.h1>
 
       {posts.length > 0 ? (
         <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">

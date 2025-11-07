@@ -2,12 +2,15 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { PenTool } from "lucide-react";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom"; // ✅ correct hook
+import { useNavigate } from "react-router-dom";
+
+// ✅ Dynamic API base URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 function AddPost() {
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
-  const navigate = useNavigate(); // ✅ create navigate instance
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -18,7 +21,7 @@ function AddPost() {
     }
 
     try {
-      const res = await fetch("http://localhost:5000/api/posts", {
+      const res = await fetch(`${API_BASE_URL}/api/posts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, content }),
@@ -29,8 +32,7 @@ function AddPost() {
         setTitle("");
         setContent("");
 
-        // ✅ navigate after success
-        setTimeout(() => navigate("/"));
+        setTimeout(() => navigate("/"), 800);
       } else {
         toast.error("Failed to add post!");
       }
@@ -47,7 +49,6 @@ function AddPost() {
       transition={{ duration: 0.8 }}
       className="max-w-2xl mx-auto glass p-10 rounded-2xl shadow-2xl mt-10 relative"
     >
-      {/* Decorative top border line */}
       <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-blue-400 to-pink-400"></div>
 
       <h2 className="text-3xl font-futuristic text-center text-blue-400 mb-6 flex justify-center items-center gap-2">
