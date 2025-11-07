@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
         - name: blog-backend
-          image: kushalpichika/blog-backend:latest  # from Docker Hub
+          image: kushalpichika/blog-backend:latest
           ports:
             - containerPort: 5000
           env:
@@ -23,5 +23,3 @@ spec:
                 secretKeyRef:
                   name: mongo-secret
                   key: MONGO_URI
-            - name: PORT
-              value: "5000"
