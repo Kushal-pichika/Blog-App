@@ -4,8 +4,6 @@ import { PenTool } from "lucide-react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 
-// ✅ Dynamic API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 function AddPost() {
   const [title, setTitle] = useState("");
@@ -21,7 +19,7 @@ function AddPost() {
     }
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/posts`, {
+      const res = await fetch(`http://blog-backend:5000/api/posts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, content }),

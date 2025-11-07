@@ -3,8 +3,6 @@ import PostCard from "../components/PostCard";
 import { motion } from "framer-motion";
 import toast from "react-hot-toast";
 
-// ✅ Dynamic API base URL (same as in AddPost.js)
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 function Home() {
   const [posts, setPosts] = useState([]);
@@ -28,7 +26,7 @@ function Home() {
   };
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/posts`)
+    fetch(`http://blog-backend:5000/api/posts`)
       .then((res) => res.json())
       .then((data) => setPosts(data))
       .catch((err) => console.error("Fetch error:", err));

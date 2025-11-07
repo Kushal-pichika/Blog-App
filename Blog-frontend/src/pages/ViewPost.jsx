@@ -3,15 +3,13 @@ import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
 
-// ✅ Use dynamic API base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 function ViewPost() {
   const { id } = useParams();
   const [post, setPost] = useState(null);
 
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/posts/${id}`)
+    fetch(`http://blog-backend:5000/api/posts/${id}`)
       .then((res) => res.json())
       .then((data) => setPost(data))
       .catch((err) => console.error("Error fetching post:", err));
