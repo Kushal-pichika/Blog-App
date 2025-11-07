@@ -19,4 +19,9 @@ spec:
             - containerPort: 5000
           env:
             - name: MONGO_URI
-              value: mongodb://mongo:27017/blogdb
+              valueFrom:
+                secretKeyRef:
+                  name: mongo-secret
+                  key: MONGO_URI
+            - name: PORT
+              value: "5000"
