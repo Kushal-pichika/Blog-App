@@ -36,4 +36,4 @@ data:
 
       - job_name: 'blog-backend'
         static_configs:
-          - targets: ['blog-backend:5000']
+          - targets: ['backend-service:5000']
