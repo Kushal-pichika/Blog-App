@@ -19,7 +19,7 @@ function AddPost() {
     }
 
     try {
-      const res = await fetch(`http://blog-backend:31354/api/posts`, {
+      const res = await fetch(`http://localhost:31354/api/posts`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, content }),

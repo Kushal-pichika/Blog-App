@@ -26,7 +26,7 @@ function Home() {
   };
 
   useEffect(() => {
-    fetch(`http://blog-backend:31354/api/posts`)
+    fetch(`http://localhost:31354/api/posts`)
       .then((res) => res.json())
       .then((data) => setPosts(data))
       .catch((err) => console.error("Fetch error:", err));

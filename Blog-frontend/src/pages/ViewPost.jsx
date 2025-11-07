@@ -9,7 +9,7 @@ function ViewPost() {
   const [post, setPost] = useState(null);
 
   useEffect(() => {
-    fetch(`http://blog-backend:31354/api/posts/${id}`)
+    fetch(`http://localhost:31354/api/posts/${id}`)
       .then((res) => res.json())
       .then((data) => setPost(data))
       .catch((err) => console.error("Error fetching post:", err));
