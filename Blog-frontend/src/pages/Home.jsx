@@ -9,7 +9,7 @@ function Home() {
 
   const handleDelete = async (id) => {
     try {
-      const res = await fetch(`localhost:31354/api/posts/${id}`, {
+      const res = await fetch(`http://localhost:31354/api/posts/${id}`, {
         method: "DELETE",
       });
 
