@@ -5,6 +5,7 @@ import Header from "./components/Header";
 import Home from "./pages/Home";
 import AddPost from "./pages/AddPost";
 import ViewPost from "./pages/ViewPost";
+import EditPost from "./pages/EditPost";
 import { motion } from "framer-motion";
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/add" element={<AddPost />} />
               <Route path="/post/:id" element={<ViewPost />} />
+              <Route path="/edit/:id" element={<EditPost />} />
             </Routes>
           </motion.div>
         </main>
