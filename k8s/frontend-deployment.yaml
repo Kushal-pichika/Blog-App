@@ -15,5 +15,6 @@ spec:
       containers:
         - name: blog-frontend
           image: kushalpichika/blog-frontend:latest  # from Docker Hub
+          imagePullPolicy: Always
           ports:
             - containerPort: 80
