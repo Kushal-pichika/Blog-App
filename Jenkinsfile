@@ -124,7 +124,6 @@ pipeline {
                         sh "docker build -f Blog-frontend/Dockerfile -t ${frontendImage} ./Blog-frontend"
                         sh "docker push ${frontendImage}"
 
-                        // --- FIXED: Corrected 'DOCKAER_USERNAME' typo ---
                         def backendImage = "${env.DOCKER_USERNAME}/${env.BACKEND_APP_NAME}:${imageTag}"
                         sh "docker build -f Blog-api/Dockerfile -t ${backendImage} ./Blog-api"
                         sh "docker push ${backendImage}"
