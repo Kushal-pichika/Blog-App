@@ -3,12 +3,13 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REGISTRY_URL = "docker.io"
-        DOCKER_USERNAME   = "kushalpichika" // Your Docker Hub username
-        KUBE_CONFIG       = "kube-cred" 
-        DOCKER_CREDS      = "dockerhub-cred"     
+        DOCKER_REGISTRY_URL = "docker.io" 
+        DOCKER_USERNAME   = "your-docker-username" // Your Docker Hub username
+        KUBE_CONFIG       = "your-kubeconfig-credentials-id" 
+        DOCKER_CREDS      = "your-docker-credentials-id"     
         FRONTEND_APP_NAME = "blog-frontend"
         BACKEND_APP_NAME  = "blog-api" 
+        // --- FIXED THE TYPO HERE ---
         K8S_NAMESPACE     = "default"
     }
 
@@ -138,7 +139,6 @@ pipeline {
                     kind: Pod
                     spec:
                       containers:
-                      # --- FIXED: Use an image that has a shell ---
                       - name: kubectl
                         image: roffe/kubectl:latest
                         command: ["sleep"]
@@ -157,26 +157,26 @@ pipeline {
                         script {
                             def imageTag = readFile('git-tag.txt').trim()
                             
-                            // --- FIXED: Typo 'DDOCKER_USERNAME' corrected ---
                             def frontendImage = "${env.DOCKER_USERNAME}/${env.FRONTEND_APP_NAME}:${imageTag}"
                             def backendImage = "${env.DOCKER_USERNAME}/${env.BACKEND_APP_NAME}:${imageTag}"
 
+                            // --- FIXED: Use K8S_NAMESPACE ---
                             sh """
                             kubectl set image deployment/${env.FRONTEND_APP_NAME} \
                               ${env.FRONTEND_APP_NAME}=${frontendImage} \
-                              -n ${env.K_NAMESPACE} \
+                              -n ${env.K8S_NAMESPACE} \
                               --record
                             """
                             
                             sh """
                             kubectl set image deployment/${env.BACKEND_APP_NAME} \
                               ${env.BACKEND_APP_NAME}=${backendImage} \
-                              -n ${env.K_NAMESPACE} \
+                              -n ${env.K8S_NAMESPACE} \
                               --record
                             """
                             
-                            sh "kubectl rollout status deployment/${env.FRONTEND_APP_NAME} -n ${env.K_NAMESPACE}"
-                            sh "kubectl rollout status deployment/${env.BACKEND_APP_NAME} -n ${env.K_NAMESPACE}"
+                            sh "kubectl rollout status deployment/${env.FRONTEND_APP_NAME} -n ${env.K8S_NAMESPACE}"
+                            sh "kubectl rollout status deployment/${env.BACKEND_APP_NAME} -n ${env.K8S_NAMESPACE}"
                         }
                     }
                 }
