@@ -18,8 +18,11 @@ pipeline {
                 echo 'Checking out code from GitHub...'
                 checkout scm
                 
-                // --- FIXED: Get the git hash and save it to a file ---
+                // Get the git hash and save it to a file
                 sh 'git rev-parse --short HEAD > git-tag.txt'
+                
+                // --- NEW: Stash the file to save it for other stages ---
+                stash name: 'git-tag', includes: 'git-tag.txt'
             }
         }
 
@@ -107,11 +110,13 @@ pipeline {
             }
             steps {
                 container('docker') {
+                    // --- NEW: Unstash the file so we can read it ---
+                    unstash 'git-tag'
+                
                     withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         sh 'echo "$DOCKER_PASS" | docker login "$DOCKER_REGISTRY_URL" -u "$DOCKER_USERNAME" --password-stdin'
                     }
 
-                    // --- FIXED: Re-added script block and read tag from file ---
                     script {
                         def imageTag = readFile('git-tag.txt').trim()
                         
@@ -147,10 +152,12 @@ pipeline {
             }
             steps {
                 container('kubectl') {
+                    // --- NEW: Unstash the file here too ---
+                    unstash 'git-tag'
+                
                     echo "Deploying new version to Kubernetes..."
                     withKubeconfig([credentialsId: env.KUBE_CONFIG]) {
                         
-                        // --- FIXED: Re-added script block and read tag from file ---
                         script {
                             def imageTag = readFile('git-tag.txt').trim()
                             
