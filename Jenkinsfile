@@ -6,9 +6,9 @@ pipeline {
 
     environment {
         DOCKCKER_REGISTRY_URL = "docker.io"
-        DOCKER_USERNAME   = "your-docker-username" // Your Docker Hub username
-        KUBE_CONFIG       = "your-kubeconfig-credentials-id" 
-        DOCKER_CREDS      = "your-docker-credentials-id"     
+        DOCKER_USERNAME   = "kushalpichika" // Your Docker Hub username
+        KUBE_CONFIG       = "kube-cred" 
+        DOCKER_CREDS      = "dockerhub-cred"     
         FRONTEND_APP_NAME = "blog-frontend"
         BACKEND_APP_NAME  = "blog-api" 
         K8S_NAMESPACE     = "default"
