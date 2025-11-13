@@ -3,10 +3,13 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_REGISTRY_URL = "docker.io"
+        DOCKER_REGISTRY_URL = "docker.io" 
         DOCKER_USERNAME   = "kushalpichika" // Your Docker Hub username
-        KUBE_CONFIG       = "kube-cred" 
-        DOCKER_CREDS      = "dockerhub-cred"     
+        
+        // --- FIXED: Use simple credential IDs ---
+        KUBE_CONFIG       = "kubeCred" 
+        DOCKER_CREDS      = "dockerCred"
+        
         FRONTEND_APP_NAME = "blog-frontend"
         BACKEND_APP_NAME  = "blog-api" 
         K8S_NAMESPACE     = "default"
@@ -159,7 +162,6 @@ pipeline {
                             def frontendImage = "${env.DOCKER_USERNAME}/${env.FRONTEND_APP_NAME}:${imageTag}"
                             def backendImage = "${env.DOCKER_USERNAME}/${env.BACKEND_APP_NAME}:${imageTag}"
 
-                            // --- FIXED: Use K8S_NAMESPACE ---
                             sh """
                             kubectl set image deployment/${env.FRONTEND_APP_NAME} \
                               ${env.FRONTEND_APP_NAME}=${frontendImage} \
