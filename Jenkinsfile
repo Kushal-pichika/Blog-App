@@ -1,25 +1,25 @@
-// Declarative Pipeline
+// Corrected Declarative Pipeline (Kubernetes agents per-stage)
 pipeline {
-    agent any
+    agent none
 
     environment {
-        DOCKER_REGISTRY_URL = "docker.io" 
-        DOCKER_USERNAME   = "kushalpichika" // Your Docker Hub username
-        
-        KUBE_CONFIG       = "kubecred" 
-        DOCKER_CREDS      = "dockercred"
-        
-        FRONTEND_APP_NAME = "blog-frontend"
-        BACKEND_APP_NAME  = "blog-api" 
-        K8S_NAMESPACE     = "default"
+        DOCKER_REGISTRY_URL = "docker.io"
+        DOCKER_USERNAME     = "kushalpichika"   // your Docker Hub username
+        KUBE_CONFIG         = "kubecred"        // kubeconfig credential id
+        DOCKER_CREDS        = "dockercred"      // Docker Hub creds id
+
+        FRONTEND_APP_NAME   = "blog-frontend"
+        BACKEND_APP_NAME    = "blog-api"
+        K8S_NAMESPACE       = "default"
     }
 
     stages {
         stage('Checkout') {
+            agent { label 'master' } // any controller/agent that can reach Git
             steps {
                 echo 'Checking out code from GitHub...'
                 checkout scm
-                
+
                 sh 'git rev-parse --short HEAD > git-tag.txt'
                 stash name: 'git-tag', includes: 'git-tag.txt'
             }
@@ -33,16 +33,16 @@ pipeline {
                     agent {
                         kubernetes {
                             yaml '''
-                            apiVersion: v1
-                            kind: Pod
-                            spec:
-                              containers:
-                              - name: node
-                                image: node:18-alpine
-                                command: ["sleep"]
-                                args: ["99d"]
-                                tty: true
-                            '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: node
+    image: node:18
+    command: ["sleep"]
+    args: ["99d"]
+    tty: true
+'''
                         }
                     }
                     steps {
@@ -50,25 +50,27 @@ pipeline {
                             echo "Running frontend tests..."
                             dir('Blog-frontend') {
                                 sh 'npm install'
-                                echo "Skipping frontend tests."
+                                // replace with real test command when ready:
+                                sh 'npm test || true'
                             }
                         }
                     }
                 }
+
                 stage('Test Backend') {
                     agent {
                         kubernetes {
                             yaml '''
-                            apiVersion: v1
-                            kind: Pod
-                            spec:
-                              containers:
-                              - name: node
-                                image: node:18-alpine
-                                command: ["sleep"]
-                                args: ["99d"]
-                                tty: true
-                            '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: node
+    image: node:18
+    command: ["sleep"]
+    args: ["99d"]
+    tty: true
+'''
                         }
                     }
                     steps {
@@ -76,7 +78,8 @@ pipeline {
                             echo "Running backend tests..."
                             dir('Blog-api') {
                                 sh 'npm install'
-                                echo "Skipping backend tests."
+                                // replace with real test command when ready:
+                                sh 'npm test || true'
                             }
                         }
                     }
@@ -87,39 +90,43 @@ pipeline {
         stage('Build & Push Images') {
             agent {
                 kubernetes {
-                    // --- FIXED: Corrected YAML indentation ---
                     yaml '''
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: docker
-                        image: docker:latest
-                        command: ["sleep"]
-                        args: ["99d"]
-                        tty: true
-                        volumeMounts:
-                        - name: docker-sock
-                          mountPath: /var/run/docker.sock
-                      # 'volumes:' is now at the correct indentation level (part of spec)
-                      volumes:
-                      - name: docker-sock
-                        hostPath:
-                          path: /var/run/docker.sock
-                    '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: docker
+    image: docker:24-dind
+    securityContext:
+      privileged: true
+    command: ["sleep"]
+    args: ["99d"]
+    tty: true
+    volumeMounts:
+    - name: docker-sock
+      mountPath: /var/run/docker.sock
+
+  volumes:
+  - name: docker-sock
+    hostPath:
+      path: /var/run/docker.sock
+'''
                 }
             }
             steps {
                 container('docker') {
                     unstash 'git-tag'
-                
-                    withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh 'echo "$DOCKER_PASS" | docker login "$DOCKER_REGISTRY_URL" -u "$DOCKER_USERNAME" --password-stdin'
+
+                    withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDS,
+                                                      usernameVariable: 'DOCKER_USER',
+                                                      passwordVariable: 'DOCKER_PASS')]) {
+                        // Use the credential variables provided by withCredentials
+                        sh 'echo "$DOCKER_PASS" | docker login "$DOCKER_REGISTRY_URL" -u "$DOCKER_USER" --password-stdin'
                     }
 
                     script {
                         def imageTag = readFile('git-tag.txt').trim()
-                        
+
                         def frontendImage = "${env.DOCKER_USERNAME}/${env.FRONTEND_APP_NAME}:${imageTag}"
                         sh "docker build -f Blog-frontend/Dockerfile -t ${frontendImage} ./Blog-frontend"
                         sh "docker push ${frontendImage}"
@@ -133,63 +140,62 @@ pipeline {
         }
 
         // --- CD PHASE ---
-        
         stage('Deploy to Kubernetes') {
             agent {
                 kubernetes {
                     yaml '''
-                    apiVersion: v1
-                    kind: Pod
-                    spec:
-                      containers:
-                      - name: kubectl
-                        image: roffe/kubectl:latest
-                        command: ["sleep"]
-                        args: ["9d"]
-                        tty: true
-                    '''
+apiVersion: v1
+kind: Pod
+spec:
+  containers:
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command: ["sleep"]
+    args: ["99d"]
+    tty: true
+'''
                 }
             }
             steps {
                 container('kubectl') {
                     unstash 'git-tag'
-                
+
                     echo "Deploying new version to Kubernetes..."
-                    
-                    withKubeConfig([credentialsId: 'kubecred']) {
-                        
+
+                    // uses the Kubernetes Credentials Plugin's withKubeConfig
+                    withKubeConfig([credentialsId: env.KUBE_CONFIG]) {
                         script {
                             def imageTag = readFile('git-tag.txt').trim()
-                            
+
                             def frontendImage = "${env.DOCKER_USERNAME}/${env.FRONTEND_APP_NAME}:${imageTag}"
-                            def backendImage = "${env.DOCKER_USERNAME}/${env.BACKEND_APP_NAME}:${imageTag}"
+                            def backendImage  = "${env.DOCKER_USERNAME}/${env.BACKEND_APP_NAME}:${imageTag}"
+
+                            // Update deployments (assumes container names equal to app names)
+                            sh """
+                              kubectl -n ${env.K8S_NAMESPACE} set image deployment/${env.FRONTEND_APP_NAME} \
+                                ${env.FRONTEND_APP_NAME}=${frontendImage} --record
+                            """
 
                             sh """
-                            kubectl set image deployment/${env.FRONTEND_APP_NAME} \
-                              ${env.FRONTEND_APP_NAME}=${frontendImage} \
-                              -n ${env.K8S_NAMESPACE} \
-                              --record
+                              kubectl -n ${env.K8S_NAMESPACE} set image deployment/${env.BACKEND_APP_NAME} \
+                                ${env.BACKEND_APP_NAME}=${backendImage} --record
                             """
-                            
-                            sh """
-                            kubectl set image deployment/${env.BACKEND_APP_NAME} \
-                              ${env.BACKEND_APP_NAME}=${backendImage} \
-                              -n ${env.K8S_NAMESPACE} \
-                              --record
-                            """
-                            
-                            sh "kubectl rollout status deployment/${env.FRONTEND_APP_NAME} -n ${env.K8S_NAMESPACE}"
-                            sh "kubectl rollout status deployment/${env.BACKEND_APP_NAME} -n ${env.K8S_NAMESPACE}"
+
+                            sh "kubectl -n ${env.K8S_NAMESPACE} rollout status deployment/${env.FRONTEND_APP_NAME}"
+                            sh "kubectl -n ${env.K8S_NAMESPACE} rollout status deployment/${env.BACKEND_APP_NAME}"
                         }
                     }
                 }
             }
         }
-    }
-    
+    } // stages
+
     post {
         always {
             echo 'Pipeline finished.'
+        }
+        failure {
+            echo 'Build failed — collect logs and artifacts as needed.'
         }
     }
 }
