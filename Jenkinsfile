@@ -138,8 +138,9 @@ pipeline {
                     kind: Pod
                     spec:
                       containers:
+                      # --- FIXED: Use an image that has a shell ---
                       - name: kubectl
-                        image: bitnami/kubectl:latest
+                        image: roffe/kubectl:latest
                         command: ["sleep"]
                         args: ["9d"]
                         tty: true
@@ -151,14 +152,13 @@ pipeline {
                     unstash 'git-tag'
                 
                     echo "Deploying new version to Kubernetes..."
-                    
-                    // --- FIXED: Changed 'withKubeconfig' to 'withKubeConfig' ---
                     withKubeConfig([credentialsId: env.KUBE_CONFIG]) {
                         
                         script {
                             def imageTag = readFile('git-tag.txt').trim()
                             
-                            def frontendImage = "${env.DDOCKER_USERNAME}/${env.FRONTEND_APP_NAME}:${imageTag}"
+                            // --- FIXED: Typo 'DDOCKER_USERNAME' corrected ---
+                            def frontendImage = "${env.DOCKER_USERNAME}/${env.FRONTEND_APP_NAME}:${imageTag}"
                             def backendImage = "${env.DOCKER_USERNAME}/${env.BACKEND_APP_NAME}:${imageTag}"
 
                             sh """
