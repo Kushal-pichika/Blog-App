@@ -1,9 +1,10 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: blog-frontend
+  name: blog-frontend # MUST match Jenkinsfile 'FRONTEND_APP_NAME'
+  namespace: default
 spec:
-  replicas: 1
+  replicas: 2
   selector:
     matchLabels:
       app: blog-frontend
@@ -11,10 +12,27 @@ spec:
     metadata:
       labels:
         app: blog-frontend
+      annotations:
+        # These lines tell Prometheus to monitor this app
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
     spec:
       containers:
-        - name: blog-frontend
-          image: kushalpichika/blog-frontend:latest  # from Docker Hub
-          imagePullPolicy: Always
-          ports:
-            - containerPort: 80
+      - name: blog-frontend
+        image: your-docker-username/blog-frontend:initial-tag # Placeholder, Jenkins will update this
+        ports:
+        - containerPort: 80 # Nginx default port
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blog-frontend-svc
+  namespace: default
+spec:
+  type: LoadBalancer # Exposes the app externally (use NodePort for Minikube)
+  selector:
+    app: blog-frontend
+  ports:
+  - protocol: TCP
+    port: 80 # Service port
+    targetPort: 80 # Container port
