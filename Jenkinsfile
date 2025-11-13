@@ -1,11 +1,9 @@
 // Declarative Pipeline
 pipeline {
-    // Use a basic agent by default.
-    // This provides a default agent for the 'post' block to run on.
     agent any
 
     environment {
-        DOCKCKER_REGISTRY_URL = "docker.io"
+        DOCKER_REGISTRY_URL = "docker.io"
         DOCKER_USERNAME   = "kushalpichika" // Your Docker Hub username
         KUBE_CONFIG       = "kube-cred" 
         DOCKER_CREDS      = "dockerhub-cred"     
@@ -16,7 +14,6 @@ pipeline {
 
     stages {
         stage('Checkout') {
-            // This stage will use the top-level 'agent any'
             steps {
                 echo 'Checking out code from GitHub...'
                 checkout scm
@@ -28,7 +25,6 @@ pipeline {
         stage('Run Tests') {
             parallel {
                 stage('Test Frontend') {
-                    // Each parallel stage gets its own agent
                     agent {
                         kubernetes {
                             yaml '''
@@ -49,15 +45,12 @@ pipeline {
                             echo "Running frontend tests..."
                             dir('Blog-frontend') {
                                 sh 'npm install'
-                                // --- FIXED: Commented out failing test command ---
-                                // sh 'npm test' 
                                 echo "Skipping frontend tests."
                             }
                         }
                     }
                 }
                 stage('Test Backend') {
-                    // Each parallel stage gets its own agent
                     agent {
                         kubernetes {
                             yaml '''
@@ -78,8 +71,6 @@ pipeline {
                             echo "Running backend tests..."
                             dir('Blog-api') {
                                 sh 'npm install'
-                                // --- FIXED: Commented out failing test command ---
-                                // sh 'npm test'
                                 echo "Skipping backend tests."
                             }
                         }
@@ -114,7 +105,10 @@ pipeline {
             steps {
                 container('docker') {
                     withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh "echo $DOCKER_PASS | docker login ${env.DOCKER_REGISTRY_URL} -u $DOCKER_USER --password-stdin"
+                        // --- FIXED: Use single quotes and correct env vars ---
+                        // This prevents the "insecure Groovy interpolation" warning
+                        // and correctly uses the environment variables.
+                        sh 'echo "$DOCKER_PASS" | docker login "$DOCKER_REGISTRY_URL" -u "$DOCKER_USERNAME" --password-stdin'
                     }
 
                     script {
@@ -183,12 +177,9 @@ pipeline {
     }
     
     post {
-        // --- FIXED: Simplified 'always' block ---
-        // This will run on the 'agent any' defined at the top
+        // --- FIXED: Removed the 'steps' wrapper ---
         always {
-            steps {
-                echo 'Pipeline finished.'
-            }
+            echo 'Pipeline finished.'
         }
     }
 }
