@@ -6,8 +6,8 @@ pipeline {
         DOCKER_REGISTRY_URL = "docker.io" 
         DOCKER_USERNAME   = "kushalpichika" // Your Docker Hub username
         
-        KUBE_CONFIG       = "kubeCred" 
-        DOCKER_CREDS      = "dockerCred"
+        KUBE_CONFIG       = "kubecred" 
+        DOCKER_CREDS      = "dockercred"
         
         FRONTEND_APP_NAME = "blog-frontend"
         BACKEND_APP_NAME  = "blog-api" 
@@ -156,7 +156,7 @@ pipeline {
                 
                     echo "Deploying new version to Kubernetes..."
                     
-                    withKubeConfig([credentialsId: 'kubeCred']) {
+                    withKubeConfig([credentialsId: 'kubecred']) {
                         
                         script {
                             def imageTag = readFile('git-tag.txt').trim()
