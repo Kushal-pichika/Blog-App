@@ -2,6 +2,9 @@
 pipeline {
     agent any
 
+    // --- CHANGE 1: Define imageTag here ---
+    def imageTag 
+
     environment {
         DOCKER_REGISTRY_URL = "docker.io"
         DOCKER_USERNAME   = "kushalpichika" // Your Docker Hub username
@@ -17,6 +20,12 @@ pipeline {
             steps {
                 echo 'Checking out code from GitHub...'
                 checkout scm
+                
+                // --- CHANGE 2: Get the git hash here ---
+                script {
+                    imageTag = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                    echo "Image tag set to: ${imageTag}"
+                }
             }
         }
 
@@ -105,23 +114,18 @@ pipeline {
             steps {
                 container('docker') {
                     withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        // --- FIXED: Use single quotes and correct env vars ---
-                        // This prevents the "insecure Groovy interpolation" warning
-                        // and correctly uses the environment variables.
                         sh 'echo "$DOCKER_PASS" | docker login "$DOCKER_REGISTRY_URL" -u "$DOCKER_USERNAME" --password-stdin'
                     }
 
-                    script {
-                        def imageTag = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-                        
-                        def frontendImage = "${env.DOCKER_USERNAME}/${env.FRONTEND_APP_NAME}:${imageTag}"
-                        sh "docker build -f Blog-frontend/Dockerfile -t ${frontendImage} ./Blog-frontend"
-                        sh "docker push ${frontendImage}"
+                    // --- CHANGE 3: No 'script' block needed ---
+                    // We just use the 'imageTag' variable
+                    def frontendImage = "${env.DOCKER_USERNAME}/${env.FRONTEND_APP_NAME}:${imageTag}"
+                    sh "docker build -f Blog-frontend/Dockerfile -t ${frontendImage} ./Blog-frontend"
+                    sh "docker push ${frontendImage}"
 
-                        def backendImage = "${env.DOCKER_USERNAME}/${env.BACKEND_APP_NAME}:${imageTag}"
-                        sh "docker build -f Blog-api/Dockerfile -t ${backendImage} ./Blog-api"
-                        sh "docker push ${backendImage}"
-                    }
+                    def backendImage = "${env.DOCKER_USERNAME}/${env.BACKEND_APP_NAME}:${imageTag}"
+                    sh "docker build -f Blog-api/Dockerfile -t ${backendImage} ./Blog-api"
+                    sh "docker push ${backendImage}"
                 }
             }
         }
@@ -148,28 +152,27 @@ pipeline {
                 container('kubectl') {
                     echo "Deploying new version to Kubernetes..."
                     withKubeconfig([credentialsId: env.KUBE_CONFIG]) {
-                        script {
-                            def imageTag = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-                            def frontendImage = "${env.DOCKER_USERNAME}/${env.FRONTEND_APP_NAME}:${imageTag}"
-                            def backendImage = "${env.DOCKER_USERNAME}/${env.BACKEND_APP_NAME}:${imageTag}"
+                        
+                        // --- CHANGE 3 (cont.): Also use the variable here ---
+                        def frontendImage = "${env.DOCKER_USERNAME}/${env.FRONTEND_APP_NAME}:${imageTag}"
+                        def backendImage = "${env.DOCKER_USERNAME}/${env.BACKEND_APP_NAME}:${imageTag}"
 
-                            sh """
-                            kubectl set image deployment/${env.FRONTEND_APP_NAME} \
-                              ${env.FRONTEND_APP_NAME}=${frontendImage} \
-                              -n ${env.K8S_NAMESPACE} \
-                              --record
-                            """
-                            
-                            sh """
-                            kubectl set image deployment/${env.BACKEND_APP_NAME} \
-                              ${env.BACKEND_APP_NAME}=${backendImage} \
-                              -n ${env.K8S_NAMESPACE} \
-                              --record
-                            """
-                            
-                            sh "kubectl rollout status deployment/${env.FRONTEND_APP_NAME} -n ${env.K8S_NAMESPACE}"
-                            sh "kubectl rollout status deployment/${env.BACKEND_APP_NAME} -n ${env.K8S_NAMESPACE}"
-                        }
+                        sh """
+                        kubectl set image deployment/${env.FRONTEND_APP_NAME} \
+                          ${env.FRONTEND_APP_NAME}=${frontendImage} \
+                          -n ${env.K_NAMESPACE} \
+                          --record
+                        """
+                        
+                        sh """
+                        kubectl set image deployment/${env.BACKEND_APP_NAME} \
+                          ${env.BACKEND_APP_NAME}=${backendImage} \
+                          -n ${env.K_NAMESPACE} \
+                          --record
+                        """
+                        
+                        sh "kubectl rollout status deployment/${env.FRONTEND_APP_NAME} -n ${env.K_NAMESPACE}"
+                        sh "kubectl rollout status deployment/${env.BACKEND_APP_NAME} -n ${env.K_NAMESPACE}"
                     }
                 }
             }
@@ -177,7 +180,6 @@ pipeline {
     }
     
     post {
-        // --- FIXED: Removed the 'steps' wrapper ---
         always {
             echo 'Pipeline finished.'
         }
