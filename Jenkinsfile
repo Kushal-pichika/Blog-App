@@ -6,7 +6,6 @@ pipeline {
         DOCKER_REGISTRY_URL = "docker.io" 
         DOCKER_USERNAME   = "kushalpichika" // Your Docker Hub username
         
-        // --- FIXED: Use simple credential IDs ---
         KUBE_CONFIG       = "kubeCred" 
         DOCKER_CREDS      = "dockerCred"
         
@@ -88,6 +87,7 @@ pipeline {
         stage('Build & Push Images') {
             agent {
                 kubernetes {
+                    // --- FIXED: Corrected YAML indentation ---
                     yaml '''
                     apiVersion: v1
                     kind: Pod
@@ -101,6 +101,7 @@ pipeline {
                         volumeMounts:
                         - name: docker-sock
                           mountPath: /var/run/docker.sock
+                      # 'volumes:' is now at the correct indentation level (part of spec)
                       volumes:
                       - name: docker-sock
                         hostPath:
@@ -123,6 +124,7 @@ pipeline {
                         sh "docker build -f Blog-frontend/Dockerfile -t ${frontendImage} ./Blog-frontend"
                         sh "docker push ${frontendImage}"
 
+                        // --- FIXED: Corrected 'DOCKAER_USERNAME' typo ---
                         def backendImage = "${env.DOCKER_USERNAME}/${env.BACKEND_APP_NAME}:${imageTag}"
                         sh "docker build -f Blog-api/Dockerfile -t ${backendImage} ./Blog-api"
                         sh "docker push ${backendImage}"
@@ -154,6 +156,7 @@ pipeline {
                     unstash 'git-tag'
                 
                     echo "Deploying new version to Kubernetes..."
+                    
                     withKubeConfig([credentialsId: 'kubeCred']) {
                         
                         script {
