@@ -5,9 +5,9 @@ pipeline {
 
     environment {
         DOCKER_REGISTRY_URL = "docker.io"
-        DOCKER_USERNAME   = "kushalpichika" // Your Docker Hub username
-        KUBE_CONFIG       = "kube-cred" 
-        DOCKER_CREDS      = "dockerhub-cred"     
+        DOCKER_USERNAME   = "your-docker-username" // Your Docker Hub username
+        KUBE_CONFIG       = "your-kubeconfig-credentials-id" 
+        DOCKER_CREDS      = "your-docker-credentials-id"     
         FRONTEND_APP_NAME = "blog-frontend"
         BACKEND_APP_NAME  = "blog-api" 
         K8S_NAMESPACE     = "default"
@@ -26,38 +26,59 @@ pipeline {
         // --- CI PHASE ---
 
         stage('Run Tests') {
-            // This stage needs 'npm', so we create a pod with a 'node' container
-            agent {
-                kubernetes {
-                    containerTemplate {
-                        name 'node'
-                        image 'node:18-alpine'
-                        command 'sleep'
-                        args '99d'
-                        ttyEnabled true
+            // This 'parallel' block is now the top-level element in this stage
+            parallel {
+                stage('Test Frontend') {
+                    // Each parallel stage gets its own agent
+                    agent {
+                        kubernetes {
+                            // Define the pod using raw YAML
+                            yaml '''
+                            apiVersion: v1
+                            kind: Pod
+                            spec:
+                              containers:
+                              - name: node
+                                image: node:18-alpine
+                                command: ["sleep"]
+                                args: ["99d"]
+                                tty: true
+                            '''
+                        }
                     }
-                }
-            }
-            steps {
-                // Run all steps inside the 'node' container
-                container('node') {
-                    parallel {
-                        stage('Test Frontend') {
-                            steps {
-                                echo "Running frontend tests..."
-                                dir('Blog-frontend') {
-                                    sh 'npm install'
-                                    sh 'npm test' 
-                                }
+                    steps {
+                        container('node') {
+                            echo "Running frontend tests..."
+                            dir('Blog-frontend') {
+                                sh 'npm install'
+                                sh 'npm test' 
                             }
                         }
-                        stage('Test Backend') {
-                            steps {
-                                echo "Running backend tests..."
-                                dir('Blog-api') {
-                                    sh 'npm install'
-                                    sh 'npm test'
-                                }
+                    }
+                }
+                stage('Test Backend') {
+                    // Each parallel stage gets its own agent
+                    agent {
+                        kubernetes {
+                            yaml '''
+                            apiVersion: v1
+                            kind: Pod
+                            spec:
+                              containers:
+                              - name: node
+                                image: node:18-alpine
+                                command: ["sleep"]
+                                args: ["99d"]
+                                tty: true
+                            '''
+                        }
+                    }
+                    steps {
+                        container('node') {
+                            echo "Running backend tests..."
+                            dir('Blog-api') {
+                                sh 'npm install'
+                                sh 'npm test'
                             }
                         }
                     }
@@ -66,33 +87,31 @@ pipeline {
         }
 
         stage('Build & Push Images') {
-            // This stage needs 'docker' and access to the host's Docker socket
             agent {
                 kubernetes {
-                    // Define a pod with a 'docker' container
-                    containerTemplate {
-                        name 'docker'
-                        image 'docker:latest'
-                        command 'sleep'
-                        args '99d'
-                        ttyEnabled true
-                        // Mount the Docker socket from the node (Docker-out-of-Docker)
-                        volumeMounts {
-                            mountPath '/var/run/docker.sock'
-                            name 'docker-sock'
-                        }
-                    }
-                    // Define the volume to be mounted
-                    volumes {
-                        hostPathVolume {
-                            hostPath '/var/run/docker.sock'
-                            name 'docker-sock'
-                        }
-                    }
+                    // This pod YAML defines a 'docker' container
+                    // and correctly mounts the docker.sock volume
+                    yaml '''
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: docker
+                        image: docker:latest
+                        command: ["sleep"]
+                        args: ["99d"]
+                        tty: true
+                        volumeMounts:
+                        - name: docker-sock
+                          mountPath: /var/run/docker.sock
+                      volumes:
+                      - name: docker-sock
+                        hostPath:
+                          path: /var/run/docker.sock
+                    '''
                 }
             }
             steps {
-                // Run all steps inside the 'docker' container
                 container('docker') {
                     withCredentials([usernamePassword(credentialsId: env.DOCKER_CREDS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
                         sh "echo $DOCKER_PASS | docker login ${env.DOCKER_REGISTRY_URL} -u $DOCKER_USER --password-stdin"
@@ -116,20 +135,22 @@ pipeline {
         // --- CD PHASE ---
         
         stage('Deploy to Kubernetes') {
-            // This stage needs 'kubectl'
             agent {
                 kubernetes {
-                    containerTemplate {
-                        name 'kubectl'
-                        image 'bitnami/kubectl:latest'
-                        command 'sleep'
-                        args '99d'
-                        ttyEnabled true
-                    }
+                    yaml '''
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: kubectl
+                        image: bitnami/kubectl:latest
+                        command: ["sleep"]
+                        args: ["99d"]
+                        tty: true
+                    '''
                 }
             }
             steps {
-                // Run all steps inside the 'kubectl' container
                 container('kubectl') {
                     echo "Deploying new version to Kubernetes..."
                     withKubeconfig([credentialsId: env.KUBE_CONFIG]) {
@@ -163,26 +184,27 @@ pipeline {
     
     post {
         always {
-            // This 'post' block also needs an agent to run 'docker logout'
+            // This 'post' block also needs a correct agent to run 'docker logout'
             agent {
                 kubernetes {
-                    containerTemplate {
-                        name 'docker'
-                        image 'docker:latest'
-                        command 'sleep'
-                        args '9d'
-                        ttyEnabled true
-                        volumeMounts {
-                            mountPath '/var/run/docker.sock'
-                            name 'docker-sock'
-                        }
-                    }
-                    volumes {
-                        hostPathVolume {
-                            hostPath '/var/run/docker.sock'
-                            name 'docker-sock'
-                        }
-                    }
+                    yaml '''
+                    apiVersion: v1
+                    kind: Pod
+                    spec:
+                      containers:
+                      - name: docker
+                        image: docker:latest
+                        command: ["sleep"]
+                        args: ["9d"]
+                        tty: true
+                        volumeMounts:
+                        - name: docker-sock
+                          mountPath: /var/run/docker.sock
+                      volumes:
+                      - name: docker-sock
+                        hostPath:
+                          path: /var/run/docker.sock
+                    '''
                 }
             }
             steps {
