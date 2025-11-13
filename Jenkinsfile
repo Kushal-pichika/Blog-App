@@ -154,7 +154,7 @@ pipeline {
                     unstash 'git-tag'
                 
                     echo "Deploying new version to Kubernetes..."
-                    withKubeConfig([credentialsId: env.KUBE_CONFIG]) {
+                    withKubeConfig([credentialsId: 'kubeCred']) {
                         
                         script {
                             def imageTag = readFile('git-tag.txt').trim()
