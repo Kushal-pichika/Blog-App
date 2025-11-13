@@ -15,7 +15,7 @@ pipeline {
 
     stages {
         stage('Checkout') {
-            agent { label 'master' } // any controller/agent that can reach Git
+            agent { label 'main' } // any controller/agent that can reach Git
             steps {
                 echo 'Checking out code from GitHub...'
                 checkout scm
