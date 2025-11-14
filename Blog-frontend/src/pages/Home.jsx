@@ -45,7 +45,7 @@ function Home() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
       >
-        <span className="text-neon-blue">Current</span>{" "}
+        <span className="text-neon-blue">Curr</span>{" "}
         <span className="text-neon-pink">Posts</span>
       </motion.h1>
 
