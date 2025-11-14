@@ -2,47 +2,44 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_USER = "kushalpichika"
-        DOCKER_CREDS = "dockerhub-cred"
-        KUBECONFIG_CRED = credentials('kube-config')
+        DOCKER_USERNAME = "kushalpichika"
+        KUBE_CONFIG = credentials('kubecred')
+        DOCKER_CREDS = credentials('dockercred')
     }
 
     stages {
-        stage('Checkout') {
+        stage('Backend - Build Image') {
             steps {
-                git 'https://github.com/Kushal-pichika/Blog-App.git'
+                sh 'docker build -t $DOCKER_USERNAME/blog-backend:latest ./backend'
             }
         }
 
-        stage('Build Backend') {
+        stage('Backend - Push Image') {
             steps {
-                sh 'docker build -t $DOCKER_USER/blog-backend:latest ./Blog-api'
+                sh 'echo $DOCKER_CREDS_PSW | docker login -u $DOCKER_CREDS_USR --password-stdin'
+                sh 'docker push $DOCKER_USERNAME/blog-backend:latest'
             }
         }
 
-        stage('Build Frontend') {
+        stage('Frontend - Build Image') {
             steps {
-                sh 'docker build -t $DOCKER_USER/blog-frontend:latest ./Blog-frontend'
+                sh 'docker build -t $DOCKER_USERNAME/blog-frontend:latest ./frontend'
             }
         }
 
-        stage('Push Images') {
+        stage('Frontend - Push Image') {
             steps {
-                script {
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_CREDS) {
-                        sh 'docker push $DOCKER_USER/blog-backend:latest'
-                        sh 'docker push $DOCKER_USER/blog-frontend:latest'
-                    }
-                }
+                sh 'echo $DOCKER_CREDS_PSW | docker login -u $DOCKER_CREDS_USR --password-stdin'
+                sh 'docker push $DOCKER_USERNAME/blog-frontend:latest'
             }
         }
 
         stage('Deploy to Kubernetes') {
             steps {
-                writeFile file: 'kubeconfig', text: KUBECONFIG_CRED
+                writeFile file: 'kubeconfig', text: "$KUBE_CONFIG"
                 sh '''
-                  export KUBECONFIG=kubeconfig
-                  kubectl apply -f k8s/
+                export KUBECONFIG=kubeconfig
+                kubectl apply -f k8s/
                 '''
             }
         }

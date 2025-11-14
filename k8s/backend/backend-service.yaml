@@ -4,9 +4,9 @@ metadata:
   name: blog-backend
   namespace: blog-app
 spec:
-  type: ClusterIP
   selector:
     app: blog-backend
   ports:
-    - port: 5000
+    - name: backend-port
+      port: 5000
       targetPort: 5000
