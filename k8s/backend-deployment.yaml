@@ -2,9 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: blog-backend
-  namespace: blog-app
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: blog-backend
@@ -14,13 +13,24 @@ spec:
         app: blog-backend
     spec:
       containers:
-        - name: backend
-          image: kushalpichika/blog-backend:latest
-          ports:
-            - containerPort: 5000
-          env:
-            - name: MONGO_URI
-              valueFrom:
-                secretKeyRef:
-                  name: mongo-atlas-cred
-                  key: MONGO_URI
+      - name: backend
+        image: kushalpichika/blog-backend:v1
+        ports:
+        - containerPort: 5000
+        env:
+        - name: MONGO_URL
+          valueFrom:
+            secretKeyRef:
+              name: mongo-secret
+              key: mongo_uri
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: blog-backend-service
+spec:
+  selector:
+    app: blog-backend
+  ports:
+    - port: 5000
+      targetPort: 5000

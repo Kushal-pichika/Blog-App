@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./Blog-api
+    container_name: blog-backend
+    ports:
+      - "5000:5000"
+    environment:
+      - MONGO_URL=${MONGO_URL}
+    env_file:
+      - ./Blog-api/.env
+
+  frontend:
+    build: ./Blog-frontend
+    container_name: blog-frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
