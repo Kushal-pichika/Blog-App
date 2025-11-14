@@ -48,3 +48,44 @@ jobs:
       run: |
         kubectl set image deployment/blog-backend backend=kushalpichika/blog-backend:${{ github.sha }}
         kubectl set image deployment/blog-frontend frontend=kushalpichika/blog-frontend:${{ github.sha }}
+name: CI-CD Pipeline to Minikube
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Login to DockerHub
+      run: |
+        docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASS }}
+
+    - name: Build Backend Image
+      run: |
+        docker build -t kushalpichika/blog-backend:${{ github.sha }} ./Blog-api
+        docker push kushalpichika/blog-backend:${{ github.sha }}
+
+    - name: Build Frontend Image
+      run: |
+        docker build -t kushalpichika/blog-frontend:${{ github.sha }} ./Blog-frontend
+        docker push kushalpichika/blog-frontend:${{ github.sha }}
+
+  deploy:
+    needs: build
+    runs-on: self-hosted
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Update Backend Deployment
+      run: |
+        kubectl set image deployment/blog-backend backend=kushalpichika/blog-backend:${{ github.sha }}
+
+    - name: Update Frontend Deployment
+      run: |
+        kubectl set image deployment/blog-frontend frontend=kushalpichika/blog-frontend:${{ github.sha }}
