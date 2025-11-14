@@ -14,7 +14,7 @@ function EditPost() {
   useEffect(() => {
     const fetchPost = async () => {
       try {
-        const res = await fetch(`http://localhost:31354/api/posts/${id}`);
+        const res = await fetch(`http://localhost:5000/api/posts/${id}`);
         if (res.ok) {
           const data = await res.json();
           setTitle(data.title);
@@ -40,7 +40,7 @@ function EditPost() {
     }
 
     try {
-      const res = await fetch(`http://localhost:31354/api/posts/${id}`, {
+      const res = await fetch(`http://localhost:5000/api/posts/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, content }),

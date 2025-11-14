@@ -1,0 +1,15 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: blog-backend-monitor
+  namespace: blog-app
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: blog-backend
+  endpoints:
+    - port: 5000
+      path: /metrics
+      interval: 15s

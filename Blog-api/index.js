@@ -11,7 +11,7 @@ app.use(cors());
 
 // ✅ Setup Prometheus metrics collection
 const collectDefaultMetrics = client.collectDefaultMetrics;
-collectDefaultMetrics({ timeout: 5000 });
+collectDefaultMetrics();
 
 // Optional: Track total HTTP requests
 const httpRequestCounter = new client.Counter({
@@ -26,12 +26,8 @@ app.use((req, res, next) => {
 
 // ✅ Expose /metrics endpoint for Prometheus scraping
 app.get("/metrics", async (req, res) => {
-  try {
-    res.set("Content-Type", client.register.contentType);
-    res.end(await client.register.metrics());
-  } catch (err) {
-    res.status(500).end(err);
-  }
+  res.set("Content-Type", client.register.contentType);
+  res.send(await client.register.metrics());
 });
 
 // ✅ MongoDB Connection
