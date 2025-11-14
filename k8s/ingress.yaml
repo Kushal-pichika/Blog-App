@@ -4,23 +4,25 @@ metadata:
   name: blog-ingress
   namespace: blog-app
   annotations:
-    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
+  ingressClassName: nginx
   rules:
     - host: blog.local
       http:
         paths:
-          - path: /
+          - path: /()(.*)
             pathType: Prefix
             backend:
               service:
                 name: blog-frontend
                 port:
                   number: 80
-          - path: /api
+
+          - path: /api(/|$)(.*)
             pathType: Prefix
             backend:
               service:
                 name: blog-backend
                 port:
-                  number: 5000
+                  name: backend-port
