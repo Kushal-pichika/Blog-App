@@ -10,7 +10,7 @@ jobs:
 
     steps:
     - name: Cleanup runner temp (Windows fix)
-      shell: pwsh
+      shell: powershell
       run: |
         Remove-Item -Path "$env:RUNNER_TEMP\*" -Recurse -Force -ErrorAction Ignore
         Remove-Item -Path "${{ github.workspace }}\*" -Recurse -Force -ErrorAction Ignore
@@ -20,15 +20,18 @@ jobs:
         clean: true
 
     - name: Login to DockerHub
+      shell: powershell
       run: |
         docker login -u ${{ secrets.DOCKER_USER }} -p ${{ secrets.DOCKER_PASS }}
 
     - name: Build Backend Image
+      shell: powershell
       run: |
         docker build -t kushalpichika/blog-backend:${{ github.sha }} ./Blog-api
         docker push kushalpichika/blog-backend:${{ github.sha }}
 
     - name: Build Frontend Image
+      shell: powershell
       run: |
         docker build -t kushalpichika/blog-frontend:${{ github.sha }} ./Blog-frontend
         docker push kushalpichika/blog-frontend:${{ github.sha }}
@@ -39,7 +42,7 @@ jobs:
 
     steps:
     - name: Cleanup runner temp (Windows fix)
-      shell: pwsh
+      shell: powershell
       run: |
         Remove-Item -Path "$env:RUNNER_TEMP\*" -Recurse -Force -ErrorAction Ignore
         Remove-Item -Path "${{ github.workspace }}\*" -Recurse -Force -ErrorAction Ignore
@@ -49,9 +52,11 @@ jobs:
         clean: true
 
     - name: Update Backend Deployment
+      shell: powershell
       run: |
         kubectl set image deployment/blog-backend backend=kushalpichika/blog-backend:${{ github.sha }}
 
     - name: Update Frontend Deployment
+      shell: powershell
       run: |
         kubectl set image deployment/blog-frontend frontend=kushalpichika/blog-frontend:${{ github.sha }}
