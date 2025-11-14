@@ -9,7 +9,15 @@ jobs:
     runs-on: self-hosted
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Cleanup runner temp (Windows fix)
+      shell: pwsh
+      run: |
+        Remove-Item -Path "$env:RUNNER_TEMP\*" -Recurse -Force -ErrorAction Ignore
+        Remove-Item -Path "${{ github.workspace }}\*" -Recurse -Force -ErrorAction Ignore
+
+    - uses: actions/checkout@v4
+      with:
+        clean: true
 
     - name: Login to DockerHub
       run: |
@@ -30,7 +38,15 @@ jobs:
     runs-on: self-hosted
 
     steps:
-    - uses: actions/checkout@v3
+    - name: Cleanup runner temp (Windows fix)
+      shell: pwsh
+      run: |
+        Remove-Item -Path "$env:RUNNER_TEMP\*" -Recurse -Force -ErrorAction Ignore
+        Remove-Item -Path "${{ github.workspace }}\*" -Recurse -Force -ErrorAction Ignore
+
+    - uses: actions/checkout@v4
+      with:
+        clean: true
 
     - name: Update Backend Deployment
       run: |
