@@ -9,25 +9,41 @@ pipeline {
 
         stage('Pull Code from GitHub') {
             steps {
-                git branch: 'main', url: 'https://github.com/Kushal12082004/Blog-App'
+                git branch: 'main',
+                url: 'https://github.com/Kushal12082004/Blog-App'
+            }
+        }
+
+        stage('Check Node Version') {
+            steps {
+                dir('Blog-App') {
+                    sh 'node -v'
+                    sh 'npm -v'
+                }
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                sh 'npm install'
+                dir('Blog-App') {
+                    sh 'npm install'
+                }
             }
         }
 
         stage('Build Project') {
             steps {
-                sh 'npm run build'
+                dir('Blog-App') {
+                    sh 'npm run build'
+                }
             }
         }
 
         stage('Run Automated Tests') {
             steps {
-                sh 'npm test'
+                dir('Blog-App') {
+                    sh 'npm test'
+                }
             }
         }
     }
@@ -36,11 +52,9 @@ pipeline {
         success {
             echo "✅ Build & Tests Successful!"
         }
-
         failure {
             echo "❌ Build or Tests Failed!"
         }
-
         always {
             echo "📊 Pipeline Execution Completed"
         }
