@@ -39,7 +39,6 @@ pipeline {
             }
         }
 
-        ✅ IMPORTANT FIX BELOW ✅
         stage('Run Automated Tests') {
             steps {
                 dir('Blog-frontend') {
