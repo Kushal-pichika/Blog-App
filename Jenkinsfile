@@ -16,7 +16,7 @@ pipeline {
 
         stage('Check Node Version') {
             steps {
-                dir('Blog-App') {
+                dir('Blog-frontend') {
                     sh 'node -v'
                     sh 'npm -v'
                 }
@@ -25,7 +25,7 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                dir('Blog-App') {
+                dir('Blog-frontend') {
                     sh 'npm install'
                 }
             }
@@ -33,7 +33,7 @@ pipeline {
 
         stage('Build Project') {
             steps {
-                dir('Blog-App') {
+                dir('Blog-frontend') {
                     sh 'npm run build'
                 }
             }
@@ -41,7 +41,7 @@ pipeline {
 
         stage('Run Automated Tests') {
             steps {
-                dir('Blog-App') {
+                dir('Blog-frontend') {
                     sh 'npm test'
                 }
             }
